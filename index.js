@@ -3,6 +3,7 @@ const app = express();
 const port = 5000;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const { auth } = require('./middleware/auth');
 const { User } = require("./models/Users");
 const config = require('./config/key');
 
@@ -23,7 +24,7 @@ mongoose.connect(config.mongoURI, {}).then(() => console.log('MongoDB Connected.
 app.get('/', (req, res) => res.send('Hello World!!!!'));
 
 
-app.post('/register',(req,res)=>{   
+app.post('/api/users/register',(req,res)=>{   
     //회원가입할 때 필요한 정보들을 client에서 가져오면,
     //그 정보들을 DB에 넣어준다.
     const user = new User(req.body);
@@ -39,7 +40,7 @@ app.post('/register',(req,res)=>{
     });
 })
 
-app.post('/login', (req, res) => {
+app.post('/api/users/login', (req, res) => {
     // 이메일이 DB에 있는지 확인
     User.findOne({
         email: req.body.email
@@ -77,5 +78,19 @@ app.post('/login', (req, res) => {
         });
     })
 });
+
+app.get('/api/users/auth', auth, (req, res) => {
+    // 여기까지 미들웨어를 통과해 왔다는 얘기는 Authentication이 true라는 말
+    res.status(200).json({
+        _id: req.user._id,
+        isAdmin: req.user.role === 0 ? false : true,
+        isAuth: true,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role,
+        image: req.user.image
+    });
+});
+
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

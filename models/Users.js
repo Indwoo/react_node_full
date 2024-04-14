@@ -39,12 +39,13 @@ userSchema.pre('save', function( next ) {
     // 비밀번호 암호화
     const user = this;
 
+    // 비밀번호가 변경될 때만 암호화
     if(user.isModified('password')) {
         bcrypt.genSalt(10, function(err, salt) {
             if (err) {
                 return next(err);
             }
-
+            
             bcrypt.hash(user.password, salt, function(err, hash) {
                 if (err) {
                     return next(err);
@@ -77,6 +78,24 @@ userSchema.methods.generateToken = function(cb) {
     return user.save();
 }
 
+userSchema.statics.findByToken = function(token, cb) {
+    user = this;
+
+    user._id + '' = token;
+
+    // 토큰을 decode
+    jwt.verify(token, 'secretToken', function(err, decoded) {
+        // 유저 아이디를 이용해서 유저를 찾은 후
+        // 클라이언트에서 가져온 token과 DB에 보관된 token이 일치하는지 확인
+        user.findOne({"_id": decoded, "token": token}, function(err, user) {
+            if (err) {
+                return cb(err);
+            }
+            return cb(null, user);
+        });
+    });
+
+}
 
 const User = mongoose.model('User', userSchema)
 
